@@ -138,7 +138,6 @@ router.post("/signup", (req, res, next) => {
 });
 
 // GET route
-router.get("/userProfile", (req, res) => res.render("users/user-profile"));
 
 // routes/auth.routes.js
 // ... imports and both signup routes stay untouched
@@ -149,7 +148,39 @@ router.get("/userProfile", (req, res) => res.render("users/user-profile"));
 router.get("/login", (req, res) => res.render("auth/login"));
 
 // userProfile route and the module export stay unchanged
+// router.post("/login", (req, res, next) => {
+//   console.log("SESSION =====> ", req.session);
+//   const { email, password } = req.body;
+
+//   if (email === "" || password === "") {
+//     res.render("auth/login", {
+//       errorMessage: "Please enter both, email and password to login.",
+//     });
+//     return;
+//   }
+
+//   User.findOne({ email })
+//     .then((user) => {
+//       if (!user) {
+//         console.log("Email not registered. ");
+//         res.render("auth/login", {
+//           errorMessage: "User not found and/or incorrect password.",
+//         });
+//         return;
+//       } else if (bcryptjs.compareSync(password, user.passwordHash)) {
+//         res.render("users/user-profile", { user });
+//       } else {
+//         console.log("Incorrect password. ");
+//         res.render("auth/login", {
+//           errorMessage: "User not found and/or incorrect password.",
+//         });
+//       }
+//     })
+//     .catch((error) => next(error));
+// });
+
 router.post("/login", (req, res, next) => {
+  console.log("SESSION =====> ", req.session);
   const { email, password } = req.body;
 
   if (email === "" || password === "") {
@@ -168,7 +199,8 @@ router.post("/login", (req, res, next) => {
         });
         return;
       } else if (bcryptjs.compareSync(password, user.passwordHash)) {
-        res.render("users/user-profile", { user });
+        req.session.currentUser = user;
+        res.redirect("/userProfile");
       } else {
         console.log("Incorrect password. ");
         res.render("auth/login", {
@@ -177,6 +209,17 @@ router.post("/login", (req, res, next) => {
       }
     })
     .catch((error) => next(error));
+});
+
+router.post("/logout", (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) next(err);
+    res.redirect("/");
+  });
+});
+
+router.get("/userProfile", (req, res) => {
+  res.render("users/user-profile", { userInSession: req.session.currentUser });
 });
 
 module.exports = router;
